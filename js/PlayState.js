@@ -150,7 +150,7 @@ Game.PlayState.prototype = {
 
     checkGameLevel: function(inAmount){
         if(inAmount >= nextThreshold){
-            nextThreshold += 10;
+            nextThreshold += 20;
             blockParent.forEach(function(item){
                 item.updateThreshold();
             })

@@ -119,9 +119,9 @@ FillBlock.prototype.checkFillAmount = function(){
 FillBlock.prototype.updateThreshold = function(){
 
     if(this.fillThreshold < .9){
-        this.fillThreshold += .1;
+        this.fillThreshold += .05;
     };
-    
+
     this.scale.setTo(1.2)
     this.game.add.tween(this.scale).to({x:1,y:1},350,Phaser.Easing.Elastic.Out,true);
         
