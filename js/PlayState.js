@@ -7,7 +7,7 @@ var timerStarted = false;
 var GameScoreTotal = 0;
 var nextThreshold = 10;
 var currentAVGpercent = 0;
-var numLives = 3;
+var numLives = 1;
 
 
 Game.PlayState.prototype = {
@@ -62,7 +62,7 @@ Game.PlayState.prototype = {
         displayText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
         displayText.fixedToCamera = true;
 
-        bonusText = this.GameScoreTotal;
+        bonusText = GameScoreTotal;
         bonusStyle = { fill: "#d9663d", align: "right" };
         bonusPopupText = this.game.add.text(this.game.world.centerX, 30, bonusText, bonusStyle);
         bonusPopupText.fixedToCamera = true;
@@ -71,17 +71,25 @@ Game.PlayState.prototype = {
         bonusPopupText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
         bonusPopupText.fontSize = 28;
 
+        overlay = this.game.add.graphics(0,0);
+        overlay.beginFill(0x000000,0.7);
+        overlay.drawRect(0,0,this.game.world.width,this.game.world.height)
+        overlay.alpha = 0;
+
         style = { fill: "#FFFFFF", align: "center" };
-        popupText = this.game.add.text(this.game.world.centerX, 150, "", style);
+        popupText = this.game.add.text(this.game.world.centerX, this.game.world.centerY, "", style);
         popupText.anchor.setTo(0.5);
-        popupText.angle = -10;
+        popupText.angle = -5;
         popupText.font = 'Alfa Slab One';
         popupText.fontSize = 38;
         popupText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
         popupText.alpha = 0;
-        // popupTextTween = this.game.add.tween(popupText).to( { alpha: .5 }, 500, Phaser.Easing.Bounce.In, false);
-        // hidePopupTextTween = this.game.add.tween(popupText).to( { alpha: 0 }, 260, Phaser.Easing.Bounce.In, false, 1000);
-        // popupTextTween.onComplete.add(this.hidePopup, this);
+        popupText.inputEnabled = true;
+        popupText.events.onInputDown.add(this.hidePopup,this);
+        popupText.inputEnabled = false;
+        popupTextTween = this.game.add.tween(popupText).to( { alpha: 1}, 500, Phaser.Easing.Linear.In, false);
+        hidePopupTextTween = this.game.add.tween(popupText).to( { alpha: 0 }, 260, Phaser.Easing.Linear.In, false);
+        popupTextTween.onComplete.add(this.resetReady, this);
 
 
         // Create a custom timer
@@ -110,11 +118,48 @@ Game.PlayState.prototype = {
                 item.inputEnabled = false;
                 item.filling = false;
                 item.fillTween.stop();
-            })
 
-            console.log("GAME OVER")
+            })
+            this.gameOver();
+            //console.log("GAME OVER")
         }
 
+    },
+
+    gameOver: function(){
+        this.game.time.events.add(300, function(){overlay.alpha = 1});
+        var finalScore = parseFloat(currentAVGpercent/GameScoreTotal).toFixed(2);;
+        var totalScore = GameScoreTotal * finalScore;
+        popupText.text = "FINAL SCORE:\n"+GameScoreTotal+" FILLS @ "  + bonusPopupText.text+ "\n" + totalScore + "\nPLAY AGAIN?";
+        popupTextTween.start();
+        
+    },
+
+    resetReady: function(){
+        popupText.inputEnabled = true;
+
+    },
+
+    hidePopup: function(){
+        console.log("fired restart button");
+        popupText.inputEnabled = false;
+        nextThreshold = 10;
+        GameScoreTotal = 0;
+        currentAVGpercent = 0;
+        displayText.text = bonusPopupText.text = "";
+        numLives = 1
+        overlay.alpha = 0;
+        hidePopupTextTween.start();
+        blockParent.forEach(function(item){
+            item.resetTween.start();
+        })
+
+        this.game.time.events.add(1000, function(){
+            blockParent.forEach(function(item){
+                item.resetBlockStatus();
+                console.log("fired restart tween");
+            })
+        }, this);
     },
 
     addPoints: function(inPercentage){
@@ -175,7 +220,7 @@ Game.PlayState.prototype = {
             this.game.world.setBounds(rand1, rand2, this.game.width + rand1, this.game.height + rand2);    
             shakeWorldCount--;    
             if (shakeWorldCount == 0) {
-                console.log("finished repetitions of shake world count")       
+                //console.log("finished repetitions of shake world count")       
                 this.game.world.setBounds(0, 0, this.game.width, this.game.height);     
             }
 
