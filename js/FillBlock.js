@@ -8,6 +8,7 @@ FillBlock = function (game, x, y){
     this.fillRate = this.game.rnd.integerInRange(5000, 15000);
     this.fillTimer = 0;
     this.filling = true;
+    this.fillThreshold = .3;
 
     this.fillRect = this.game.add.sprite(0, 0 , "blockSprite")
     this.fillRect.anchor.setTo(0.5,1)
@@ -19,7 +20,9 @@ FillBlock = function (game, x, y){
     this.inputEnabled = true;
     this.events.onInputDown.add(this.stopFill, this)
     this.fillTween = this.game.add.tween(this.fillRect.scale).to({y:1.1},this.fillRate,Phaser.Easing.Quadratic.Out,true,1000);
-    //this.game.physics.arcade.enable(this);
+    this.resetTween = this.game.add.tween(this.fillRect.scale).to({y:0},250,Phaser.Easing.Quadratic.Out);
+    this.resetTween.onComplete.add(this.restartFill, this);
+
     this.emitter = game.add.emitter(0, -200);
     this.emitter.makeParticles('particle');
     this.emitter.setXSpeed(-150, 150);
@@ -66,7 +69,7 @@ FillBlock.prototype.update = function(){
 };
 
 FillBlock.prototype.stopFill = function(){
-    if(this.fillAmount < .1)
+    if(this.fillAmount < this.fillThreshold)
         return;
 
     this.filling = false;
@@ -77,19 +80,19 @@ FillBlock.prototype.stopFill = function(){
     var twoPlacedFloat = parseFloat(this.fillAmount * 100).toFixed(2);
     var percInt = Math.round(this.fillAmount * 100);
     this.stopSignal.dispatch(percInt);
-    var resetTween = this.game.add.tween(this.fillRect.scale).to({y:0},250,Phaser.Easing.Quadratic.Out,true);
-    resetTween.onComplete.add(this.restartFill, this);
+    this.resetTween.start();
 };
 
 FillBlock.prototype.restartFill = function(){
 
     this.fillAmount = this.fillRect.scale.y = 0;
+    this.fillRect.tint = 0xFFFFFF;
     this.fillRate = this.game.rnd.integerInRange(7500, 20000);
     this.filling = true;
 
-    this.fillTween.start()// = this.game.add.tween(this.fillRect.scale).to({y:1.1},this.fillRate,Phaser.Easing.Quadratic.Out,true);
+    this.fillTween.start()
 
-    console.log("restart the fill tween")
+    //console.log("restart the fill tween")
 };
 
 FillBlock.prototype.overfilled = function(){
@@ -108,10 +111,20 @@ FillBlock.prototype.overfilled = function(){
 
 FillBlock.prototype.checkFillAmount = function(){
 
-    // if(this.fillAmount > .3){
-    //     this.fillRect.tint = 0x01DF01;
-    //     console.log("changed fill colour to: " + this.fillRect.tint)
-    // }
+    if(this.fillAmount > this.fillThreshold){
+        this.fillRect.tint = 0x01DF01;
+    }
+};
+
+FillBlock.prototype.updateThreshold = function(){
+
+    if(this.fillThreshold < .9){
+        this.fillThreshold += .1;
+    };
+    
+    this.scale.setTo(1.2)
+    this.game.add.tween(this.scale).to({x:1,y:1},350,Phaser.Easing.Elastic.Out,true);
+        
 };
 
 FillBlock.prototype.initSprite = function(){

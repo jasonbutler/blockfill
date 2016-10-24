@@ -4,8 +4,8 @@ Game.PlayState = function(){};
 
 
 var timerStarted = false;
-var targetScore = 50;
 var GameScoreTotal = 0;
+var nextThreshold = 10;
 var currentAVGpercent = 0;
 var numLives = 3;
 
@@ -26,14 +26,6 @@ Game.PlayState.prototype = {
         jumpSound = this.game.add.audio('jump');
         wrongSound = this.game.add.audio('wrong');
 
-
-        
-
-        // errorColour = this.game.add.graphics( 0, 0 );
-        // errorColour.beginFill(0xd9663d, 1);
-        // errorColour.drawRect(0, 0, 800, 800);
-        // errorColour.alpha = 0;
-        // errorTween = this.game.add.tween(errorColour).to( { alpha: 0 }, 500, Phaser.Easing.Quadratic.Out, false);
         blockParent = this.game.add.group();
         var Xpos = 200;
         var Ypos = 300;
@@ -53,12 +45,18 @@ Game.PlayState.prototype = {
             }
             
         }
-        
 
-       
+        var percBar = this.game.add.graphics(0,0);
+        percBar.lineStyle(4,0xffffff,1)
+        percBar.drawRect(150,25, 475,50)
+
+        this.powerBar = this.game.add.graphics(150,25);
+        this.powerBar.beginFill(0xffffff,1)
+        this.powerBar.drawRect(0,0, 475,50)
+
         
         style = { fill: "#d9663d", align: "left" };
-        displayText = this.game.add.text(15, 15, "", style);
+        displayText = this.game.add.text(30, 30, "", style);
         displayText.font = 'Alfa Slab One';
         displayText.fontSize = 28;
         displayText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
@@ -66,7 +64,7 @@ Game.PlayState.prototype = {
 
         bonusText = this.GameScoreTotal;
         bonusStyle = { fill: "#d9663d", align: "right" };
-        bonusPopupText = this.game.add.text(440, 15, bonusText, bonusStyle);
+        bonusPopupText = this.game.add.text(this.game.world.centerX, 30, bonusText, bonusStyle);
         bonusPopupText.fixedToCamera = true;
         bonusPopupText.anchor.setTo(0.5, 0);
         bonusPopupText.font = 'Alfa Slab One';
@@ -93,19 +91,6 @@ Game.PlayState.prototype = {
         timerEvent = gameTimer.loop(Phaser.Timer.SECOND, this.updateTimer, this);
         //gameTimer.start();
         timeLeft = 30;
-        //swipe listener
-
-        // var bgRect = this.game.add.graphics( this.game.world.centerX, this.game.world.centerY );
-        // bgRect.lineStyle(4,0xFFFFFF,1)
-        // bgRect.drawRect(-50, -200, 100, 200);
-
-        // this.fillRect = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY )
-        // this.fillRect.anchor.setTo(0.5,1)
-        // var fill = this.game.add.graphics( 0, 0 );
-        // fill.beginFill(0xFFFFFF, 1);
-        // fill.drawRect(-50, -200, 100, 200);
-        // this.fillRect.addChild(fill)
-        // this.fillRect.scale.y = .5 //this.fillAmount;
 
         console.log("Playstate created")
 
@@ -136,11 +121,12 @@ Game.PlayState.prototype = {
         console.log("tapped a block @: " + inPercentage);
 
         GameScoreTotal ++;
-        //currentAVGpercent = currentAVGpercent += inPercentage.toFixed(12)
-
+        this.checkGameLevel(GameScoreTotal);
         displayText.text = GameScoreTotal;
         currentAVGpercent += inPercentage;
-        var twoPlacedFloat = parseFloat(currentAVGpercent / GameScoreTotal).toFixed(2)
+        var twoPlacedFloat = parseFloat(currentAVGpercent / GameScoreTotal).toFixed(2);
+        this.game.add.tween(this.powerBar.scale).to( {x: (currentAVGpercent/GameScoreTotal) / 100 }, 150, Phaser.Easing.Linear.Out, true);
+        //this.powerBar.scale.x = (currentAVGpercent/GameScoreTotal) / 100;
         bonusPopupText.text = twoPlacedFloat + "%";
         //currentAVGpercent = twoPlacedFloat;
     },
@@ -160,6 +146,15 @@ Game.PlayState.prototype = {
         if(timeLeft < 1)
         this.endTimer();
 
+    },
+
+    checkGameLevel: function(inAmount){
+        if(inAmount >= nextThreshold){
+            nextThreshold += 10;
+            blockParent.forEach(function(item){
+                item.updateThreshold();
+            })
+        }
     },
 
     endTimer: function(){
