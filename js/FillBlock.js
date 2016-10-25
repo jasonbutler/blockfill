@@ -10,12 +10,14 @@ FillBlock = function (game, x, y){
     this.filling = true;
     this.fillThreshold = .3;
     this.maxSpeed = 20000;
+    this.overFilled = false;
 
     this.threshRect = this.game.add.sprite(0, 0 , "blockSprite")
     this.threshRect.anchor.setTo(0.5,1)
     this.threshRect.alpha = 0.5;
-    this.threshRect.scale.y = this.fillThreshold;
+    this.threshRect.scale.y = 0;
     this.addChild(this.threshRect)
+    this.game.add.tween(this.threshRect.scale).to({y:this.fillThreshold},1500,Phaser.Easing.Elastic.Out,true);
 
     this.fillRect = this.game.add.sprite(0, 0 , "blockSprite")
     this.fillRect.anchor.setTo(0.5,1)
@@ -62,8 +64,15 @@ FillBlock.prototype.update = function(){
 };
 
 FillBlock.prototype.stopFill = function(){
-    if(this.fillAmount < this.fillThreshold)
+    if(this.fillAmount < this.fillThreshold){
+        this.updateThreshold();
         return;
+
+    }
+
+    if(!this.filling)
+        return;
+        
 
     this.filling = false;
     this.fillTween.stop();
@@ -94,16 +103,31 @@ FillBlock.prototype.resetFill = function(){
 };
 
 FillBlock.prototype.resetBlockStatus = function(){
-    this.fillTween = null;
+    
     this.fillTween = this.game.add.tween(this.fillRect.scale).to({y:1.1},this.fillRate,Phaser.Easing.Quadratic.Out,true,1000);
     this.inputEnabled = true;
     this.fillThreshold = .3;
-    this.threshRect.scale.y = this.fillThreshold;
     this.fillRect.alpha = 1;
     this.maxSpeed = 20000;
+    this.game.add.tween(this.threshRect.scale).to({y:this.fillThreshold},1000,Phaser.Easing.Elastic.Out,true);
     this.restartFill();
 
 };
+
+FillBlock.prototype.killBlockFill = function(){
+    if(this.fillTween.isRunning){
+        this.fillTween.stop()
+    }else{
+        this.fillTween = null;
+    }
+    
+};
+
+FillBlock.prototype.resetBlockFill = function(){
+    this.resetTween.start();
+    this.game.time.events.add(1500,this.resetBlockStatus, this)
+};
+
 
 FillBlock.prototype.overfilled = function(){
     this.fillTween.stop();
@@ -111,8 +135,9 @@ FillBlock.prototype.overfilled = function(){
     this.inputEnabled = false;
     this.fillRect.tint = 0xFF0000;
     this.fillRect.alpha = .75;
+    this.overFilled = true;
 
-console.log("overfilled!!!! " + this.fillRect.tint)
+    console.log("overfilled!!!! " + this.fillRect.tint)
 
     this.fullSignal.dispatch();
     this.emitter.start(true, 800, null, 20);
@@ -133,8 +158,12 @@ FillBlock.prototype.updateThreshold = function(){
         this.fillThreshold += .05;
     };
 
-    if(this.maxSpeed > 8000){
-        this.maxSpeed -= 500;
+    if(this.fillThreshold > .9 && this.fillThreshold < .95){
+        this.fillThreshold += .01;
+    };
+
+    if(this.maxSpeed > 9000){
+        this.maxSpeed -= 750;
     };
 
     this.game.add.tween(this.threshRect.scale).to({y:this.fillThreshold},750,Phaser.Easing.Elastic.Out,true);

@@ -26,6 +26,14 @@ Game.PlayState.prototype = {
         jumpSound = this.game.add.audio('jump');
         wrongSound = this.game.add.audio('wrong');
 
+        style = { fill: "#d9663d", align: "center" };
+        displayText = this.game.add.text(this.game.world.centerX, this.game.world.centerY, "", style);
+        displayText.anchor.setTo(0.5);
+        displayText.font = 'Alfa Slab One';
+        displayText.fontSize = 250;
+        displayText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
+        displayText.fixedToCamera = true;
+
         blockParent = this.game.add.group();
         var Xpos = 200;
         var Ypos = 300;
@@ -53,14 +61,10 @@ Game.PlayState.prototype = {
         this.powerBar = this.game.add.graphics(150,25);
         this.powerBar.beginFill(0xffffff,1)
         this.powerBar.drawRect(0,0, 475,50)
+        this.powerBar.scale.x = 0;
 
         
-        style = { fill: "#d9663d", align: "left" };
-        displayText = this.game.add.text(30, 30, "", style);
-        displayText.font = 'Alfa Slab One';
-        displayText.fontSize = 28;
-        displayText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
-        displayText.fixedToCamera = true;
+        
 
         bonusText = GameScoreTotal;
         bonusStyle = { fill: "#d9663d", align: "right" };
@@ -116,9 +120,7 @@ Game.PlayState.prototype = {
         if(numLives == 0){
             blockParent.forEach(function(item){
                 item.inputEnabled = false;
-                item.filling = false;
-                item.fillTween.stop();
-
+                item.killBlockFill();
             })
             this.gameOver();
             //console.log("GAME OVER")
@@ -128,8 +130,8 @@ Game.PlayState.prototype = {
 
     gameOver: function(){
         this.game.time.events.add(300, function(){overlay.alpha = 1});
-        var finalScore = parseFloat(currentAVGpercent/GameScoreTotal).toFixed(2);;
-        var totalScore = GameScoreTotal * finalScore;
+        var finalScore = parseFloat(currentAVGpercent/GameScoreTotal).toFixed(2);
+        var totalScore = parseFloat(GameScoreTotal * finalScore).toFixed(2);
         popupText.text = "FINAL SCORE:\n"+GameScoreTotal+" FILLS @ "  + bonusPopupText.text+ "\n" + totalScore + "\nPLAY AGAIN?";
         popupTextTween.start();
         
@@ -150,16 +152,12 @@ Game.PlayState.prototype = {
         numLives = 1
         overlay.alpha = 0;
         hidePopupTextTween.start();
+        this.game.add.tween(this.powerBar.scale).to( {x: 0 }, 500, Phaser.Easing.Linear.Out, true);
         blockParent.forEach(function(item){
-            item.resetTween.start();
+            item.resetBlockFill();
         })
 
-        this.game.time.events.add(1000, function(){
-            blockParent.forEach(function(item){
-                item.resetBlockStatus();
-                console.log("fired restart tween");
-            })
-        }, this);
+        
     },
 
     addPoints: function(inPercentage){
@@ -170,7 +168,7 @@ Game.PlayState.prototype = {
         displayText.text = GameScoreTotal;
         currentAVGpercent += inPercentage;
         var twoPlacedFloat = parseFloat(currentAVGpercent / GameScoreTotal).toFixed(2);
-        this.game.add.tween(this.powerBar.scale).to( {x: (currentAVGpercent/GameScoreTotal) / 100 }, 150, Phaser.Easing.Linear.Out, true);
+        this.game.add.tween(this.powerBar.scale).to( {x: twoPlacedFloat / 100 }, 150, Phaser.Easing.Linear.Out, true);
         //this.powerBar.scale.x = (currentAVGpercent/GameScoreTotal) / 100;
         bonusPopupText.text = twoPlacedFloat + "%";
         //currentAVGpercent = twoPlacedFloat;
@@ -202,15 +200,6 @@ Game.PlayState.prototype = {
         }
     },
 
-    endTimer: function(){
-        gameTimer.stop();
-
-        //GameScoreTotal = jumpScore;
-        //this.state.start('Results');
-
-
-    },
-
     shakeWorld: function(range, duration){
         var shakeWorldCount = duration;
         //this.shakeWorldIntensity = range;
@@ -229,19 +218,6 @@ Game.PlayState.prototype = {
         if (navigator.vibrate) {
             navigator.vibrate(750)
         }
-    },
-
-    resetSprite: function(fillBlock){
-        goalSprite.kill();
-        goalSprite.reset(this.game.world.centerX, this.game.world.centerY);
-        goalSprite.initSprite();
-
-        this.game.add.tween(goalSprite).to( { alpha: 1 }, 300, Phaser.Easing.Quadratic.Out, true);
-        this.game.add.tween(goalSprite.scale).to( { x: 1, y:1 }, 300, Phaser.Easing.Bounce.Out, true);
-
-    },
-
-    nextGameState: function(){
-        this.state.start('Results');
     }
+
 };
