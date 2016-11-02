@@ -5,6 +5,7 @@ Game.PlayState = function(){};
 
 var timerStarted = false;
 var GameScoreTotal = 0;
+var BonusScoreTotal = 0;
 var nextThreshold = 10;
 var currentAVGpercent = 0;
 var numLives = 1;
@@ -18,13 +19,14 @@ Game.PlayState.prototype = {
         console.log("PlayState STARTED")
 
         this.game.world.setBounds(0, 0, 800, 800);
-        //this.game.stage.backgroundColour = "#71c885";
+        this.game.stage.backgroundColour = "#333333";
+        this.comboMultiplier = 0;
 
         navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
  
-        collectSound = this.game.add.audio('collect');
-        jumpSound = this.game.add.audio('jump');
-        wrongSound = this.game.add.audio('wrong');
+        tapSound = this.game.add.audio('tapBleep');
+        levelUpSound = this.game.add.audio('levelUp');
+        impactSound = this.game.add.audio('impact');
 
         style = { fill: "#d9663d", align: "center" };
         displayText = this.game.add.text(this.game.world.centerX, this.game.world.centerY, "", style);
@@ -63,12 +65,8 @@ Game.PlayState.prototype = {
         this.powerBar.drawRect(0,0, 475,50)
         this.powerBar.scale.x = 0;
 
-        
-        
-
-        bonusText = GameScoreTotal;
         bonusStyle = { fill: "#d9663d", align: "right" };
-        bonusPopupText = this.game.add.text(this.game.world.centerX, 30, bonusText, bonusStyle);
+        bonusPopupText = this.game.add.text(this.game.world.centerX, 30, "0%", bonusStyle);
         bonusPopupText.fixedToCamera = true;
         bonusPopupText.anchor.setTo(0.5, 0);
         bonusPopupText.font = 'Alfa Slab One';
@@ -91,18 +89,19 @@ Game.PlayState.prototype = {
         popupText.inputEnabled = true;
         popupText.events.onInputDown.add(this.hidePopup,this);
         popupText.inputEnabled = false;
+
+        style = { fill: "#FF0000", align: "center" };
+        bonusText = this.game.add.text(this.game.world.centerX, this.game.world.centerY, "", style);
+        bonusText.anchor.setTo(0.5);
+        bonusText.angle = 5;
+        bonusText.font = 'Alfa Slab One';
+        bonusText.fontSize = 45;
+        bonusText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
+        bonusText.alpha = 0;
+        
         popupTextTween = this.game.add.tween(popupText).to( { alpha: 1}, 500, Phaser.Easing.Linear.In, false);
         hidePopupTextTween = this.game.add.tween(popupText).to( { alpha: 0 }, 260, Phaser.Easing.Linear.In, false);
         popupTextTween.onComplete.add(this.resetReady, this);
-
-
-        // Create a custom timer
-        gameTimer = this.game.time.create();
-        
-        // Create a delayed event 1m and 30s from now
-        timerEvent = gameTimer.loop(Phaser.Timer.SECOND, this.updateTimer, this);
-        //gameTimer.start();
-        timeLeft = 30;
 
         console.log("Playstate created")
 
@@ -116,12 +115,9 @@ Game.PlayState.prototype = {
     loseLife: function(){
         this.shakeWorld(10,20);
         numLives--;
-
+        impactSound.play();
         if(numLives == 0){
-            blockParent.forEach(function(item){
-                item.inputEnabled = false;
-                item.killBlockFill();
-            })
+            
             this.gameOver();
             //console.log("GAME OVER")
         }
@@ -129,11 +125,20 @@ Game.PlayState.prototype = {
     },
 
     gameOver: function(){
-        this.game.time.events.add(300, function(){overlay.alpha = 1});
+        blockParent.forEach(function(item){
+            
+            item.killBlockFill();
+        })
+
+        if(GameScoreTotal == 0){bonusPopupText.text = "0%"}
         var finalScore = parseFloat(currentAVGpercent/GameScoreTotal).toFixed(2);
-        var totalScore = parseFloat(GameScoreTotal * finalScore).toFixed(2);
+        var totalScore = (GameScoreTotal > 0)?parseFloat(GameScoreTotal * finalScore + BonusScoreTotal).toFixed(2) : "0 POINTS";
         popupText.text = "FINAL SCORE:\n"+GameScoreTotal+" FILLS @ "  + bonusPopupText.text+ "\n" + totalScore + "\nPLAY AGAIN?";
-        popupTextTween.start();
+        this.game.time.events.add(500, function(){
+            overlay.alpha = 1;
+            popupTextTween.start();
+        });
+        
         
     },
 
@@ -148,6 +153,7 @@ Game.PlayState.prototype = {
         nextThreshold = 10;
         GameScoreTotal = 0;
         currentAVGpercent = 0;
+        BonusScoreTotal = 0;
         displayText.text = bonusPopupText.text = "";
         numLives = 1
         overlay.alpha = 0;
@@ -162,7 +168,7 @@ Game.PlayState.prototype = {
 
     addPoints: function(inPercentage){
         console.log("tapped a block @: " + inPercentage);
-
+        tapSound.play();
         GameScoreTotal ++;
         this.checkGameLevel(GameScoreTotal);
         displayText.text = GameScoreTotal;
@@ -172,6 +178,26 @@ Game.PlayState.prototype = {
         //this.powerBar.scale.x = (currentAVGpercent/GameScoreTotal) / 100;
         bonusPopupText.text = twoPlacedFloat + "%";
         //currentAVGpercent = twoPlacedFloat;
+
+        if(inPercentage > 90){
+            this.comboMultiplier++;
+            this.addComboBonus(inPercentage);
+        }else{
+            this.comboMultiplier = 0;
+        }
+    },
+
+    addComboBonus: function(inPercentage){
+        var bonus = this.comboMultiplier * inPercentage * 10;
+        BonusScoreTotal += bonus;
+        //console.log("bonus amount is : "+bonus)
+        this.shakeWorld(5,20);
+        bonusText.text = "COMBO BONUS\n" + bonus;
+        bonusText.scale.setTo(0)
+        this.game.add.tween(bonusText.scale).to( {x: 1, y: 1 }, 1000, Phaser.Easing.Elastic.Out, true);
+        this.game.add.tween(bonusText).to( {alpha: 1 }, 150, Phaser.Easing.Linear.Out, true);
+        this.game.add.tween(bonusText).to( {alpha: 0 }, 150, Phaser.Easing.Linear.Out, true, 1200);
+
     },
 
     updateTimer: function(){
@@ -197,6 +223,7 @@ Game.PlayState.prototype = {
             blockParent.forEach(function(item){
                 item.updateThreshold();
             })
+            levelUpSound.play();
         }
     },
 
