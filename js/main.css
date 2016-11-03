@@ -6,6 +6,7 @@ html, body {
     font-family: 'Bitter', serif;
 	color:#cc3300;
 	overflow:hidden;
+	background: #000;
 }
 p{
 	
@@ -21,7 +22,7 @@ h2{
 }
 
 canvas{
-	outline:15px solid white;
+
 }
 
 

@@ -7,13 +7,13 @@ Game.Boot.prototype = {
   preload: function() {
     //assets we'll use in the loading screen
     this.load.image('preloadbar', 'assets/images/winner-banner.png');
-    this.load.image('preloadLogo', 'assets/images/sporangeSpongeLogo.png');
-    this.load.image('preloadSplash', 'assets/images/splashScreen.jpg');
+    this.load.image('preloadLogo', 'assets/images/logo.png');
+    //this.load.image('preloadSplash', 'assets/images/splashScreen.jpg');
     
   },
   create: function() {
     //loading screen will have a white background
-    this.game.stage.backgroundColour = "#777";
+    this.game.stage.backgroundColour = "#333333";
 
     //scaling options
     this.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;

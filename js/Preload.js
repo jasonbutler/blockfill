@@ -18,7 +18,7 @@ Game.Preload.prototype = {
 
     this.preloadBar = this.add.sprite(this.game.world.centerX, this.game.world.centerY, 'preloadbar');
     this.preloadBar.anchor.setTo(0.5);
-    this.preloadLogo = this.add.sprite(this.game.world.centerX, 200, 'preloadLogo');
+    this.preloadLogo = this.add.sprite(this.game.world.centerX, 300, 'preloadLogo');
     this.preloadLogo.anchor.setTo(0.5);
  
     style = { fill: "#FFFFFF", align: "center" };
@@ -33,8 +33,13 @@ Game.Preload.prototype = {
     //load game assets
     this.load.image('SPONGElogo', 'assets/images/spongeLogo1.png');
     this.load.image('blockSprite', 'assets/images/blockSprite.png');
-    this.game.load.image('particle', 'assets/images/particle.png');
-    
+    this.load.image('particle', 'assets/images/particle.png');
+    this.load.image('smile', 'assets/images/smile.png');
+    this.load.image('half-smile', 'assets/images/half-smile.png');
+    this.load.image('no-smile', 'assets/images/no-smile1.png');
+    this.load.image('cheer', 'assets/images/cheer.png');
+    this.load.image('bliss', 'assets/images/bliss.png');
+
     //menu
     this.load.image('Next_button', 'assets/images/menu/Next_button.png');
     this.load.image('Replay_button', 'assets/images/menu/Replay_button.png');
@@ -46,11 +51,14 @@ Game.Preload.prototype = {
     this.load.image('jumpButton', 'assets/images/HUD/Jump.png');
     this.load.image('scoreBg', 'assets/images/HUD/Score_timer.png');
 
-    this.load.audio('collect', ['assets/audio/collectPresent.ogg', 'assets/audio/collectPresent.mp3']);
+    this.load.audio('tapBleep', ['assets/audio/tapBleep.wav']);
     this.load.audio('click', ['assets/audio/buttonClick.mp3']);
-    this.load.audio('jump', ['assets/audio/jumpAscend.ogg', 'assets/audio/jumpAscend.mp3']);
-    this.load.audio('wrong', ['assets/audio/buzzer.mp3']);
-
+    this.load.audio('levelUp', ['assets/audio/levelUp.wav']);
+    this.load.audio('impact', ['assets/audio/impact.wav']);
+    this.load.audio('combo', ['assets/audio/combo.mp3']);
+    this.load.audio('theme', ['assets/audio/theme_2.wav']);
+    this.load.audio('miss', ['assets/audio/miss.wav']);
+    this.load.audio('activeSound', ['assets/audio/activeSound.wav']);
   },
   create: function() {
     this.state.start('PlayState');

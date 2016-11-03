@@ -18,7 +18,7 @@ Game.PlayState.prototype = {
     create: function() {
         console.log("PlayState STARTED")
 
-        this.game.world.setBounds(0, 0, 800, 800);
+        this.game.world.setBounds(0, 0, 520, 800);
         this.game.stage.backgroundColour = "#333333";
         this.comboMultiplier = 0;
 
@@ -27,6 +27,13 @@ Game.PlayState.prototype = {
         tapSound = this.game.add.audio('tapBleep');
         levelUpSound = this.game.add.audio('levelUp');
         impactSound = this.game.add.audio('impact');
+        comboSound = this.game.add.audio('combo');
+
+        theme = this.game.add.audio('theme');
+        theme.loop = true;
+        theme.volume = 0.5;
+        theme.play();
+
 
         style = { fill: "#d9663d", align: "center" };
         displayText = this.game.add.text(this.game.world.centerX, this.game.world.centerY, "", style);
@@ -37,7 +44,7 @@ Game.PlayState.prototype = {
         displayText.fixedToCamera = true;
 
         blockParent = this.game.add.group();
-        var Xpos = 200;
+        var Xpos = 60;
         var Ypos = 300;
         //add our fillblocks
         for (var i = 0; i < 12; i++) {
@@ -47,10 +54,12 @@ Game.PlayState.prototype = {
             blockParent.add(fillItem)
             fillItem.fullSignal.add(this.loseLife,this)
             fillItem.stopSignal.add(this.addPoints,this)
+            fillItem.pitchAmount = 1 + (i/12);
+
 
             Xpos += 125;
             if(i == 3 || i == 7){
-                Xpos = 200;
+                Xpos = 60;
                 Ypos += 225;
             }
             
@@ -58,9 +67,9 @@ Game.PlayState.prototype = {
 
         var percBar = this.game.add.graphics(0,0);
         percBar.lineStyle(4,0xffffff,1)
-        percBar.drawRect(150,25, 475,50)
+        percBar.drawRect(10,25, 475,50)
 
-        this.powerBar = this.game.add.graphics(150,25);
+        this.powerBar = this.game.add.graphics(10,25);
         this.powerBar.beginFill(0xffffff,1)
         this.powerBar.drawRect(0,0, 475,50)
         this.powerBar.scale.x = 0;
@@ -74,7 +83,7 @@ Game.PlayState.prototype = {
         bonusPopupText.fontSize = 28;
 
         overlay = this.game.add.graphics(0,0);
-        overlay.beginFill(0x000000,0.7);
+        overlay.beginFill(0x000000,0.5);
         overlay.drawRect(0,0,this.game.world.width,this.game.world.height)
         overlay.alpha = 0;
 
@@ -95,13 +104,15 @@ Game.PlayState.prototype = {
         bonusText.anchor.setTo(0.5);
         bonusText.angle = 5;
         bonusText.font = 'Alfa Slab One';
-        bonusText.fontSize = 45;
+        bonusText.fontSize = 80;
         bonusText.setShadow(0, 2, 'rgba(0,0,0,0.75)', 1);
         bonusText.alpha = 0;
         
         popupTextTween = this.game.add.tween(popupText).to( { alpha: 1}, 500, Phaser.Easing.Linear.In, false);
         hidePopupTextTween = this.game.add.tween(popupText).to( { alpha: 0 }, 260, Phaser.Easing.Linear.In, false);
         popupTextTween.onComplete.add(this.resetReady, this);
+
+
 
         console.log("Playstate created")
 
@@ -166,9 +177,11 @@ Game.PlayState.prototype = {
         
     },
 
-    addPoints: function(inPercentage){
+    addPoints: function(inPercentage, inThreshold, speed){
         console.log("tapped a block @: " + inPercentage);
-        tapSound.play();
+        console.log("tapped a block with a threshold of @: " + inThreshold);
+        // tapSound.playbackRate = speed;
+        // tapSound.play();
         GameScoreTotal ++;
         this.checkGameLevel(GameScoreTotal);
         displayText.text = GameScoreTotal;
@@ -179,7 +192,7 @@ Game.PlayState.prototype = {
         bonusPopupText.text = twoPlacedFloat + "%";
         //currentAVGpercent = twoPlacedFloat;
 
-        if(inPercentage > 90){
+        if(inPercentage > 90 && inThreshold < .9){
             this.comboMultiplier++;
             this.addComboBonus(inPercentage);
         }else{
@@ -190,13 +203,13 @@ Game.PlayState.prototype = {
     addComboBonus: function(inPercentage){
         var bonus = this.comboMultiplier * inPercentage * 10;
         BonusScoreTotal += bonus;
-        //console.log("bonus amount is : "+bonus)
-        this.shakeWorld(5,20);
-        bonusText.text = "COMBO BONUS\n" + bonus;
-        bonusText.scale.setTo(0)
-        this.game.add.tween(bonusText.scale).to( {x: 1, y: 1 }, 1000, Phaser.Easing.Elastic.Out, true);
-        this.game.add.tween(bonusText).to( {alpha: 1 }, 150, Phaser.Easing.Linear.Out, true);
+        var bonusString = (this.comboMultiplier > 1)? "X"+ this.comboMultiplier +" COMBO!\nBONUS\n" : "BONUS\n"
+        bonusText.text = bonusString + bonus;
+        // bonusText.scale.setTo(0)
+        // this.game.add.tween(bonusText.scale).to( {x: 1, y: 1 }, 1000, Phaser.Easing.Elastic.Out, true);
+        this.game.add.tween(bonusText).to( {alpha: 0.7 }, 150, Phaser.Easing.Linear.Out, true);
         this.game.add.tween(bonusText).to( {alpha: 0 }, 150, Phaser.Easing.Linear.Out, true, 1200);
+        if(this.comboMultiplier > 1){comboSound.play();};
 
     },
 
